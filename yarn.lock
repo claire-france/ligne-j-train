@@ -6599,6 +6599,11 @@ launch-editor@^2.6.0:
     picocolors "^1.0.0"
     shell-quote "^1.8.1"
 
+ldrs@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/ldrs/-/ldrs-1.0.1.tgz#38128d2e36f2b9321da171fbe4c532b656e8e28c"
+  integrity sha512-eeCP1XEG72Yz6JX50zlYWRJcEfNBrpp8QSzyjD3HHhxrnt4steLX4iDHF3Dezjbnnj5qtuJn7lr1nln+/kpUIQ==
+
 leven@^3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/leven/-/leven-3.1.0.tgz#77891de834064cccba82ae7842bb6b14a13ed7f2"
