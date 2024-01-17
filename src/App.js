@@ -3,8 +3,9 @@ import {
   Container, Typography, Card, Link, CardContent, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Paper, Grid, Box, Alert
 } from '@mui/material';
+import Snackbar from '@mui/material/Snackbar';
 import axios from 'axios';
-import { format, addDays } from 'date-fns';
+import { format, addDays, compareAsc } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import LoadingAnimation from "./customLoading";
 import { cardio } from 'ldrs'
@@ -25,44 +26,61 @@ const formatDuration = (duration) => {
   return `${minutes}min`;
 };
 
-const ScheduleCard = ({ direction, date, schedule }) => (
-  <Card sx={{ mb: 4 }}>
-    <CardContent>
-      <Typography
-        align="center"
-        variant="h6"
-        gutterBottom
-        component="div"
-        sx={{ fontWeight: 'bold' }}
-      >
-        {`${direction} (${formatDate(date)})`}
-      </Typography>
+const ScheduleCard = ({ direction, date, schedule, isToday = false }) => {
+  // Get the current time formatted as HH:mm
+  const currentTime = format(new Date(), 'HH:mm');
+  // const currentTime = "22:17";
 
-      <TableContainer component={Paper}>
-        <Table size="small" aria-label="a dense table">
-          <TableHead>
-            <TableRow>
-              <TableCell align="center">Departure</TableCell>
-              <TableCell align="center">Arrival</TableCell>
-              <TableCell align="center">Duration</TableCell>
-            </TableRow>
+  return (
+    <Card sx={{ mb: 4 }}>
+      <CardContent>
+        <Typography
+          align="center"
+          variant="h6"
+          gutterBottom
+          component="div"
+          sx={{ fontWeight: 'bold' }}
+        >
+          {`${direction} (${formatDate(date)})`}
+        </Typography>
 
-          </TableHead>
-          <TableBody>
-            {schedule.map((row, index) => (
-              <TableRow key={index}>
-                <TableCell align="center">{formatTime(row.departure)}</TableCell>
-                <TableCell align="center">{formatTime(row.arrival)}</TableCell>
-                <TableCell align="center">{formatDuration(row.duration)}</TableCell>
+        <TableContainer component={Paper}>
+          <Table size="small" aria-label="a dense table">
+            <TableHead>
+              <TableRow>
+                <TableCell align="center">Departure</TableCell>
+                <TableCell align="center">Arrival</TableCell>
+                <TableCell align="center">Duration</TableCell>
               </TableRow>
 
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </CardContent>
-  </Card>
-);
+            </TableHead>
+            <TableBody>
+              {(() => {
+                let nextDepartureFound = false;
+                return schedule.map((row, index) => {
+                  // Check if the departure time is the next upcoming one and hasn't been found yet
+                  const isNextDeparture = isToday && !nextDepartureFound && compareAsc(new Date(`1970-01-01T${formatTime(row.departure)}`), new Date(`1970-01-01T${currentTime}`)) >= 0;
+
+                  if (isNextDeparture) {
+                    nextDepartureFound = true;
+                  }
+
+                  return (
+                    <TableRow key={index}>
+                      <TableCell align="center" sx={{ fontWeight: isNextDeparture ? 'bold' : 'normal' }}>{formatTime(row.departure)}</TableCell>
+                      <TableCell align="center">{formatTime(row.arrival)}</TableCell>
+                      <TableCell align="center">{formatDuration(row.duration)}</TableCell>
+                    </TableRow>
+                  );
+                });
+              })()}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </CardContent>
+    </Card>
+  )
+};
 
 
 const App = () => {
@@ -75,6 +93,41 @@ const App = () => {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // State for Snackbar
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [nextDepartures, setNextDepartures] = useState({ paris: '', vernon: '' });
+
+  const currentTime = format(new Date(), 'HH:mm');
+
+  // Function to find the next departure
+  const findNextDeparture = (schedule, direction) => {
+    let nextDepartureFound = false;
+    let nextDepartureTime = '';
+
+    schedule.forEach((row) => {
+      if (!nextDepartureFound) {
+        const departureDateTime = new Date(`1970-01-01T${formatTime(row.departure)}`);
+        if (compareAsc(departureDateTime, new Date(`1970-01-01T${currentTime}`)) >= 0) {
+          nextDepartureFound = true;
+          nextDepartureTime = formatTime(row.departure);
+        }
+      }
+    });
+
+    setNextDepartures((prevDepartures) => ({
+      ...prevDepartures,
+      [direction]: nextDepartureTime,
+    }));
+  };
+
+  useEffect(() => {
+    if (scheduleData.vernonParisToday.length && scheduleData.parisVernonToday.length) {
+      findNextDeparture(scheduleData.vernonParisToday, 'paris');
+      findNextDeparture(scheduleData.parisVernonToday, 'vernon');
+      setSnackbarOpen(true);
+    }
+  }, [scheduleData]);
 
   useEffect(() => {
     const fetchSchedules = async () => {
@@ -122,6 +175,24 @@ const App = () => {
 
   return (
     <Container maxWidth="lg">
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={60000}
+        onClose={() => setSnackbarOpen(false)}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity="success"
+          sx={{ width: '100%' }}
+        >
+          {nextDepartures.paris && `Next to Paris Saint-Lazare: ${nextDepartures.paris}`}
+          {nextDepartures.paris && nextDepartures.vernon && ' | '}
+          {nextDepartures.vernon && `Next to Vernon: ${nextDepartures.vernon}`}
+          {!nextDepartures.paris && !nextDepartures.vernon && 'No more departures for today'}
+        </Alert>
+      </Snackbar>
+
       <Box my={4} sx={{ textAlign: 'center' }}>
         <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
           <Link target="_blank" href="https://www.transilien.com/fr/page-lignes/ligne-j#content-section-1160-part-2-tab" color="primary" underline="always">
@@ -140,11 +211,13 @@ const App = () => {
             direction="Vernon to Paris"
             date={scheduleData.dates.today}
             schedule={scheduleData.vernonParisToday}
+            isToday={true}
           />
           <ScheduleCard
             direction="Paris to Vernon"
             date={scheduleData.dates.today}
             schedule={scheduleData.parisVernonToday}
+            isToday={true}
           />
         </Grid>
         <Grid item xs={12} md={6}>
