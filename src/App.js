@@ -116,6 +116,93 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false }) => {
 };
 
 
+const WeatherInfo = () => {
+  const [weatherData, setWeatherData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Inline styles for compact table layout
+  const tableContainerStyle = {
+    width: 'auto', // Set the width to auto to prevent unnecessary stretching
+    margin: 'auto', // Center the table container if it's smaller than the parent
+  };
+
+  // Inline styles for compact rows and cells
+  const rowStyle = {
+    padding: '6px 10px', // Smaller padding for compactness
+  };
+
+  const cellStyle = {
+    whiteSpace: 'nowrap', // Prevent text wrapping
+    paddingRight: '16px', // Adjust right padding to match your design
+  };
+
+  useEffect(() => {
+    const fetchWeatherData = async () => {
+      try {
+        const response = await axios.get('https://lignej-vv-ps.fly.dev/current-weather/vernon');
+        setWeatherData(response.data);
+      } catch (error) {
+        setError(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWeatherData();
+  }, []);
+
+  if (loading) return <p>Chargement des données météorologiques...</p>;
+  if (error) return <p>Erreur de chargement des données météo : {error.message}</p>;
+
+  return (
+    <div>
+      <h3>Météo actuelle à <a href="https://meteofrance.com/" target="_blank">Vernon</a></h3>
+      <TableContainer component={Paper} style={tableContainerStyle}>
+        <Table size="small">
+          <TableBody>
+            <TableRow style={rowStyle}>
+              <TableCell style={cellStyle}>Mise à jour</TableCell>
+              <TableCell>{weatherData.updated_at}</TableCell>
+            </TableRow>
+            <TableRow style={rowStyle}>
+              <TableCell style={cellStyle}>Température</TableCell>
+              <TableCell>{weatherData.temperature_do}°C</TableCell>
+            </TableRow>
+            <TableRow style={rowStyle}>
+              <TableCell style={cellStyle}>Ressenti</TableCell>
+              <TableCell>{weatherData.wind_chill_do}°C</TableCell>
+            </TableRow>
+            <TableRow style={rowStyle}>
+              <TableCell style={cellStyle}>Humidité</TableCell>
+              <TableCell>{weatherData.humidity_percentage}%</TableCell>
+            </TableRow>
+            <TableRow style={rowStyle}>
+              <TableCell style={cellStyle}>Vitesse du vent</TableCell>
+              <TableCell>{weatherData.wind_speed_ms} m/s</TableCell>
+            </TableRow>
+            <TableRow style={rowStyle}>
+              <TableCell style={cellStyle}>Nuages</TableCell>
+              <TableCell>{weatherData.cloudiness_percentage}%</TableCell>
+            </TableRow>
+            <TableRow style={rowStyle}>
+              <TableCell style={cellStyle}>Condition météorologique</TableCell>
+              <TableCell>{weatherData.weather_condition}</TableCell>
+            </TableRow>
+            {weatherData.next_hour_rain_date && (
+              <TableRow style={rowStyle}>
+                <TableCell style={cellStyle}>Pluie prévue dans l'heure</TableCell>
+                <TableCell>{weatherData.next_hour_rain_date}</TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      <img src={weatherData.france_img} alt="Météo en France" style={{ marginTop: '10px', maxWidth: '100%' }} />
+    </div>
+  );
+};
+
 const App = () => {
   const [scheduleData, setScheduleData] = useState({
     vernonParisToday: [],
@@ -243,6 +330,8 @@ const App = () => {
       </Snackbar>
 
       <Box my={4} sx={{ textAlign: 'center' }}>
+        <WeatherInfo />
+
         <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
           <Link target="_blank" href="https://www.transilien.com/fr/page-lignes/ligne-j#content-section-1160-part-2-tab" color="primary" underline="always">
             Ligne J Train Schedules
