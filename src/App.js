@@ -139,7 +139,7 @@ const WeatherInfo = ({ area, weatherData }) => {
 
   return (
     <div>
-      <h3>Météo actuelle à <a href="https://meteofrance.com/" target="_blank">Vernon</a></h3>
+      <h3>Météo actuelle à <a href="https://meteofrance.com/" target="_blank">{area}</a></h3>
       <TableContainer component={Paper} style={tableContainerStyle}>
         <Table size="small">
           <TableBody>
