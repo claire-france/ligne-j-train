@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import Snackbar from '@mui/material/Snackbar';
 import axios from 'axios';
-import { format, addDays, compareAsc } from 'date-fns';
+import { format, addDays, compareAsc, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import LoadingAnimation from "./customLoading";
 import { cardio } from 'ldrs'
@@ -19,11 +19,36 @@ cardio.register()
 const formatDate = (date) => format(date, 'PP', { locale: fr });
 const formatTime = (time) => time.slice(0, 5); // Corrected to slice the string
 
+// Function to format ISO date strings
+const formatIsoDate = (isoDate) => {
+  return format(parseISO(isoDate), "PPpp", { locale: fr });
+};
+
 // Function to convert the duration from "0:26:30" to "26min"
 const formatDuration = (duration) => {
   const parts = duration.split(':');
   const minutes = parseInt(parts[1], 10); // Convert string to integer and remove any leading zeros
   return `${minutes}min`;
+};
+
+const DisruptionSnackbar = ({ disruption, onClose }) => {
+  return (
+    <Snackbar
+      open={true}
+      autoHideDuration={6000}
+      onClose={onClose}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+    >
+      <Alert onClose={onClose} severity="warning" sx={{ width: '100%' }}>
+        <Typography variant="body2">Cause: {disruption.cause}</Typography>
+        <Typography variant="body2">Effect: {disruption.severity.effect}</Typography>
+        {disruption.messages.map((message, index) => (
+          <Typography key={index} variant="body2">{message.text}</Typography>
+        ))}
+        {/* Display the application period if needed */}
+      </Alert>
+    </Snackbar>
+  );
 };
 
 const ScheduleCard = ({ direction, date, schedule, isToday = false }) => {
@@ -66,8 +91,16 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false }) => {
                   }
 
                   return (
-                    <TableRow key={index}>
-                      <TableCell align="center" sx={{ fontWeight: isNextDeparture ? 'bold' : 'normal' }}>{formatTime(row.departure)}</TableCell>
+                    <TableRow
+                      key={index}
+                      sx={{
+                        backgroundColor: isNextDeparture ? 'rgba(0, 0, 0, 0.04)' : '', // Light grey background for next departure
+                        '.MuiTableCell-root': { // Apply bold style conditionally to all cells in the row
+                          fontWeight: isNextDeparture ? 'bold' : 'normal',
+                        },
+                      }}
+                    >
+                      <TableCell align="center">{formatTime(row.departure)}</TableCell>
                       <TableCell align="center">{formatTime(row.arrival)}</TableCell>
                       <TableCell align="center">{formatDuration(row.duration)}</TableCell>
                     </TableRow>
@@ -97,6 +130,16 @@ const App = () => {
   // State for Snackbar
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [nextDepartures, setNextDepartures] = useState({ paris: '', vernon: '' });
+
+  // Alerts
+  const [disruption, setDisruption] = useState(null);
+
+  // Function to close individual disruption snackbar
+  const handleCloseDisruption = (index) => {
+    setDisruption((currentDisruptions) => (
+      currentDisruptions.filter((_, i) => i !== index)
+    ));
+  };
 
   const currentTime = format(new Date(), 'HH:mm');
 
@@ -138,6 +181,13 @@ const App = () => {
           axios.get('https://lignej-vv-ps.fly.dev/train-schedule/paris-to-vernon'),
         ]);
 
+        // Handle disruptions
+        if (vernonParisResponse.data.disruptions && vernonParisResponse.data.disruptions.length > 0) {
+          setDisruption(vernonParisResponse.data.disruptions);
+        } else {
+          setDisruption(null);
+        }
+
         setScheduleData((prevData) => ({
           ...prevData,
           vernonParisToday: vernonParisResponse.data.today.journeys,
@@ -175,10 +225,9 @@ const App = () => {
 
   return (
     <Container maxWidth="lg">
-
       <Snackbar
         open={snackbarOpen}
-        autoHideDuration={60000}
+        // autoHideDuration={60000}
         onClose={() => setSnackbarOpen(false)}
       >
         <Alert
@@ -204,6 +253,20 @@ const App = () => {
           Paris = Gare de Paris Saint-Lazare<br />
           Vernon = Gare de Vernouillet - Verneuil
         </Typography>
+
+        {disruption ? (
+          disruption.map((disrupt, index) => (
+            <DisruptionSnackbar
+              key={disrupt.id}
+              disruption={disrupt}
+              onClose={() => handleCloseDisruption(index)}
+            />
+          ))
+        ) : (
+          <Typography variant="subtitle1">
+            now: Ligne J OK
+          </Typography>
+        )}
       </Box>
       <Grid container spacing={4} justifyContent="center">
         <Grid item xs={12} md={6}>
