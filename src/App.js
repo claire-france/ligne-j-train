@@ -116,10 +116,8 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false }) => {
 };
 
 
-const WeatherInfo = () => {
-  const [weatherData, setWeatherData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+// A component to display weather for a given area
+const WeatherInfo = ({ area, weatherData }) => {
 
   // Inline styles for compact table layout
   const tableContainerStyle = {
@@ -137,23 +135,7 @@ const WeatherInfo = () => {
     paddingRight: '16px', // Adjust right padding to match your design
   };
 
-  useEffect(() => {
-    const fetchWeatherData = async () => {
-      try {
-        const response = await axios.get('https://lignej-vv-ps.fly.dev/current-weather/vernon');
-        setWeatherData(response.data);
-      } catch (error) {
-        setError(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWeatherData();
-  }, []);
-
-  if (loading) return <p>Chargement des données météorologiques...</p>;
-  if (error) return <p>Erreur de chargement des données météo : {error.message}</p>;
+  if (!weatherData) return null;
 
   return (
     <div>
@@ -198,7 +180,53 @@ const WeatherInfo = () => {
           </TableBody>
         </Table>
       </TableContainer>
-      <img src={weatherData.france_img} alt="Météo en France" style={{ marginTop: '10px', maxWidth: '100%' }} />
+    </div>
+  );
+};
+
+
+// Main component to display weather side by side
+const WeatherDisplay = () => {
+  const [vernonWeather, setVernonWeather] = useState(null);
+  const [parisWeather, setParisWeather] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [franceImg, setFranceImg] = useState('');
+
+  useEffect(() => {
+    // Function to fetch weather data
+    const fetchWeatherData = async (apiUrl, setter) => {
+      try {
+        const response = await axios.get(apiUrl);
+        setter(response.data); // Set the weather data for the respective area
+        if (!franceImg) setFranceImg(response.data.france_img); // Set the image if not already set
+      } catch (error) {
+        setError(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Fetch Vernon and Paris weather data
+    fetchWeatherData('https://lignej-vv-ps.fly.dev/current-weather/vernon', setVernonWeather);
+    fetchWeatherData('https://lignej-vv-ps.fly.dev/current-weather/paris', setParisWeather);
+  }, []);
+
+  if (loading) return <p>Chargement des données météorologiques...</p>;
+  if (error) return <p>Erreur de chargement des données météo : {error.message}</p>;
+
+  return (
+    <div>
+      {franceImg && <img src={franceImg} alt="Satellite de la France" style={{ marginTop: '10px', maxWidth: '100%', display: 'block', marginLeft: 'auto', marginRight: 'auto' }} />}
+
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+          <WeatherInfo area="Vernon" apiUrl="https://lignej-vv-ps.fly.dev/current-weather/vernon" weatherData={vernonWeather} />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <WeatherInfo area="Paris" apiUrl="https://lignej-vv-ps.fly.dev/current-weather/paris" weatherData={parisWeather} />
+        </Grid>
+      </Grid>
     </div>
   );
 };
@@ -330,7 +358,7 @@ const App = () => {
       </Snackbar>
 
       <Box my={4} sx={{ textAlign: 'center' }}>
-        <WeatherInfo />
+        <WeatherDisplay />
 
         <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
           <Link target="_blank" href="https://www.transilien.com/fr/page-lignes/ligne-j#content-section-1160-part-2-tab" color="primary" underline="always">
