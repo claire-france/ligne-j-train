@@ -122,14 +122,22 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false }) => {
 const WeatherInfo = ({ area, weatherData, isSuwon = false }) => {
   if (!weatherData) return null;
 
+  // If it's Suwon, data structure differs:
+  // {
+  //   "temperature": "1.9",
+  //   "desc": "맑음",
+  //   "iconImage": "...",
+  //   "humidity": "41",
+  //   "rainfall": "0.0",
+  //   "snowfall": ""
+  // }
   if (isSuwon) {
-    // Suwon data from Kakao API
     return (
-      <Card sx={{ mb: 2, boxShadow: 3 }}>
+      <Card sx={{ mb: 2 }}>
         <CardContent>
           <Typography variant="h6" component="h3" gutterBottom sx={{ fontWeight: 'bold' }}>
             Météo actuelle à{' '}
-            <Link href="https://map.kakao.com/" target="_blank">
+            <Link href="https://www.k-pullup.com/pullup/7263" target="_blank">
               {area}
             </Link>
           </Typography>
@@ -259,32 +267,13 @@ const WeatherDisplay = () => {
   }, [franceImg]);
 
   useEffect(() => {
-    // Fetch Suwon weather from Kakao API
+    // Fetch Suwon weather from given endpoint
     const fetchSuwonWeather = async () => {
       try {
-        const response = await axios.get(
-          'https://map.kakao.com/api/dapi/point/weather?inputCoordSystem=WCONGNAMUL&outputCoordSystem=WCONGNAMUL&version=2&service=map.daum.net&x=518723&y=1046886',
-          {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-              'Referer': 'https://map.kakao.com/'
-            }
-          }
-        );
-
-        const current = response.data.weatherInfos.current;
-        const iconImage = `https://t1.daumcdn.net/localimg/localimages/07/2018/pc/weather/ico_weather${current.iconId}.png`;
-
-        setSuwonWeather({
-          temperature: current.temperature,
-          desc: current.desc,
-          humidity: current.humidity,
-          rainfall: current.rainfall,
-          snowfall: current.snowfall,
-          iconImage: iconImage
-        });
+        const response = await axios.get('https://www.k-pullup.com/api/v1/markers/weather?latitude=37.26796&longitude=127.08443500000001');
+        setSuwonWeather(response.data);
       } catch (err) {
-        // If error occurs, no Suwon data, but no crash either.
+        // If error occurs, we won't block the entire UI, just no Suwon data
       }
     };
     fetchSuwonWeather();
