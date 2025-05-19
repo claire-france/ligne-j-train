@@ -3,6 +3,8 @@ import DirectionsTransitIcon from '@mui/icons-material/DirectionsTransit';
 import ErrorIcon from '@mui/icons-material/Error';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
 import InfoIcon from '@mui/icons-material/Info';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import NorthIcon from '@mui/icons-material/North';
 import SouthIcon from '@mui/icons-material/South';
 import TrainIcon from '@mui/icons-material/Train';
@@ -103,6 +105,7 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
   const isEmpty = !schedule || schedule.length === 0;
   const tableRef = React.useRef(null);
   const [showStickyHeader, setShowStickyHeader] = useState(false);
+  const [expanded, setExpanded] = useState(false); // New state to track expansion
 
   // Track scroll position to show/hide sticky header
   useEffect(() => {
@@ -121,6 +124,41 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isEmpty]);
+
+  // New function to determine which rows to display in collapsed mode
+  const getVisibleRows = () => {
+    if (expanded || isEmpty) return schedule;
+    
+    if (!isToday) return schedule.slice(0, 3); // For tomorrow, just show first 3
+    
+    // For today, try to show next departure and one before/after
+    let nextDepartureIndex = -1;
+    
+    // Find next departure
+    for (let i = 0; i < schedule.length; i++) {
+      const isUpcoming = compareAsc(
+        new Date(`1970-01-01T${formatTime(schedule[i].departure)}`), 
+        new Date(`1970-01-01T${currentTime}`)
+      ) >= 0;
+      
+      if (isUpcoming) {
+        nextDepartureIndex = i;
+        break;
+      }
+    }
+    
+    // No upcoming departures today
+    if (nextDepartureIndex === -1) return schedule.slice(0, 3);
+    
+    // Calculate range to show (next departure and one before/after if possible)
+    const startIndex = Math.max(0, nextDepartureIndex - 1);
+    const endIndex = Math.min(schedule.length, startIndex + 3);
+    
+    return schedule.slice(startIndex, endIndex);
+  };
+
+  const visibleRows = getVisibleRows();
+  const hasMoreRows = !isEmpty && !expanded && schedule.length > visibleRows.length;
 
   return (
     <Card sx={{ 
@@ -281,7 +319,7 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
                 {(() => {
                   let nextDepartureFound = false;
                   
-                  return schedule.map((row, index) => {
+                  return visibleRows.map((row, index) => {
                     const isNextDeparture = isToday &&
                       !nextDepartureFound &&
                       compareAsc(new Date(`1970-01-01T${formatTime(row.departure)}`), new Date(`1970-01-01T${currentTime}`)) >= 0;
@@ -363,6 +401,70 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
               </TableBody>
             </Table>
           </TableContainer>
+
+          {/* Show more/less button */}
+          {hasMoreRows && (
+            <Box 
+              sx={{ 
+                textAlign: 'center', 
+                py: 1.5, 
+                borderTop: '1px solid rgba(0,0,0,0.08)',
+                background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(0,0,0,0.02) 100%)'
+              }}
+            >
+              <Button
+                variant="text"
+                color={direction.includes('Vernon') ? "primary" : "error"}
+                size="small"
+                onClick={() => setExpanded(true)}
+                endIcon={<KeyboardArrowDownIcon />}
+                sx={{ 
+                  fontWeight: 500,
+                  px: 3,
+                  py: 0.5,
+                  borderRadius: '20px',
+                  backgroundColor: 'rgba(0,0,0,0.03)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0,0,0,0.06)',
+                  },
+                }}
+              >
+                Voir tous les horaires ({schedule.length - visibleRows.length} de plus)
+              </Button>
+            </Box>
+          )}
+          
+          {/* Show less button when expanded */}
+          {expanded && (
+            <Box 
+              sx={{ 
+                textAlign: 'center', 
+                py: 1.5, 
+                borderTop: '1px solid rgba(0,0,0,0.08)',
+                background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(0,0,0,0.02) 100%)'
+              }}
+            >
+              <Button
+                variant="text"
+                color={direction.includes('Vernon') ? "primary" : "error"}
+                size="small"
+                onClick={() => setExpanded(false)}
+                endIcon={<KeyboardArrowUpIcon />}
+                sx={{ 
+                  fontWeight: 500,
+                  px: 3,
+                  py: 0.5,
+                  borderRadius: '20px',
+                  backgroundColor: 'rgba(0,0,0,0.03)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0,0,0,0.06)',
+                  },
+                }}
+              >
+                Réduire
+              </Button>
+            </Box>
+          )}
         </CardContent>
       )}
     </Card>
