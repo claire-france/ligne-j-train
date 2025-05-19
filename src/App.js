@@ -157,6 +157,17 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
     return schedule.slice(startIndex, endIndex);
   };
 
+  // Handler to toggle expanded state
+  const toggleExpanded = (e) => {
+    // Check if click is on a button, link, or within the table content
+    if (e.target.closest('button') || e.target.closest('a') || e.target.closest('table')) {
+      return; // Don't toggle if clicking on interactive elements or table
+    }
+    
+    // Otherwise toggle expanded state for any click on the card or its children
+    setExpanded(prev => !prev);
+  };
+
   const visibleRows = getVisibleRows();
   const hasMoreRows = !isEmpty && !expanded && schedule.length > visibleRows.length;
 
@@ -172,9 +183,13 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
         boxShadow: '0 6px 25px rgba(0,0,0,0.15)',
       },
       position: 'relative', // Required for absolute positioning of sticky header
-      overflow: 'visible' // Allow sticky header to be visible outside card
-    }}>
+      overflow: 'visible', // Allow sticky header to be visible outside card
+      cursor: isEmpty ? 'default' : 'pointer',
+    }}
+      onClick={isEmpty ? undefined : toggleExpanded} // Only add click handler if not empty
+    >
       <CardHeader
+      className="card-clickable-area"
         avatar={
           <Avatar sx={{ bgcolor: direction.includes('Vernon') ? '#1976d2' : '#f44336' }}>
             {icon}
@@ -260,7 +275,7 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
           </Button>
         </Box>
       ) : (
-        <CardContent sx={{ p: 0, width: '100%', position: 'relative' }} ref={tableRef}>
+        <CardContent sx={{ p: 0, width: '100%', position: 'relative' }} ref={tableRef} onClick={(e) => e.stopPropagation()}>
           {/* Sticky header that appears when scrolling */}
           {showStickyHeader && (
             <Box
@@ -416,7 +431,10 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
                 variant="text"
                 color={direction.includes('Vernon') ? "primary" : "error"}
                 size="small"
-                onClick={() => setExpanded(true)}
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent card click
+                  setExpanded(true);
+                }}
                 endIcon={<KeyboardArrowDownIcon />}
                 sx={{ 
                   fontWeight: 500,
@@ -448,7 +466,10 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
                 variant="text"
                 color={direction.includes('Vernon') ? "primary" : "error"}
                 size="small"
-                onClick={() => setExpanded(false)}
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent card click
+                  setExpanded(false);
+                }}
                 endIcon={<KeyboardArrowUpIcon />}
                 sx={{ 
                   fontWeight: 500,
