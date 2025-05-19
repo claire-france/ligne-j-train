@@ -1112,7 +1112,7 @@ const App = () => {
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <ScheduleCard
-                    direction="Vernon → Paris"
+                    direction="Vernouillet - Verneuil → Paris"
                     date={scheduleData.dates.tomorrow}
                     schedule={scheduleData.vernonParisTomorrow}
                     isToday={false}
@@ -1121,7 +1121,7 @@ const App = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <ScheduleCard
-                    direction="Paris → Vernon"
+                    direction="Paris → Vernouillet - Verneuil"
                     date={scheduleData.dates.tomorrow}
                     schedule={scheduleData.parisVernonTomorrow}
                     isToday={false}
