@@ -191,7 +191,7 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
       <CardHeader
       className="card-clickable-area"
         avatar={
-          <Avatar sx={{ bgcolor: direction.includes('Vernon') ? '#1976d2' : '#f44336' }}>
+          <Avatar sx={{ bgcolor: direction.includes('Vernou') ? '#1976d2' : '#f44336' }}>
             {icon}
           </Avatar>
         }
@@ -285,7 +285,7 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
                 left: 0,
                 right: 0,
                 zIndex: 1000,  // Increased z-index
-                backgroundColor: direction.includes('Vernon') ? 'rgba(25, 118, 210, 0.98)' : 'rgba(244, 67, 54, 0.98)',
+                backgroundColor: direction.includes('Vernou') ? 'rgba(25, 118, 210, 0.98)' : 'rgba(244, 67, 54, 0.98)',
                 color: 'white',
                 py: 1.5,
                 px: 2,
@@ -429,7 +429,7 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
             >
               <Button
                 variant="text"
-                color={direction.includes('Vernon') ? "primary" : "error"}
+                color={direction.includes('Vernou') ? "primary" : "error"}
                 size="small"
                 onClick={(e) => {
                   e.stopPropagation(); // Prevent card click
@@ -464,7 +464,7 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
             >
               <Button
                 variant="text"
-                color={direction.includes('Vernon') ? "primary" : "error"}
+                color={direction.includes('Vernou') ? "primary" : "error"}
                 size="small"
                 onClick={(e) => {
                   e.stopPropagation(); // Prevent card click
@@ -1090,7 +1090,7 @@ const App = () => {
               <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                   <ScheduleCard
-                    direction="Vernon → Paris"
+                    direction="Vernouillet - Verneuil → Paris"
                     date={scheduleData.dates.today}
                     schedule={scheduleData.vernonParisToday}
                     isToday={true}
@@ -1099,7 +1099,7 @@ const App = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                   <ScheduleCard
-                    direction="Paris → Vernon"
+                    direction="Paris → Vernouillet - Verneuil"
                     date={scheduleData.dates.today}
                     schedule={scheduleData.parisVernonToday}
                     isToday={true}
