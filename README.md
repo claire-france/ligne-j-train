@@ -72,7 +72,7 @@ Pensée pour les habitants de la vallée de la Seine qui font régulièrement le
 ## 🙋‍♂️ Auteur
 
 Développé par SeokWon, utilisateur quotidien de la ligne J, passionné par la tech, le transport, et la simplification du quotidien.
-Contact : [github](#) / [LinkedIn](#) (à compléter)
+Contact : [github](https://github.com/Alfex4936?tab=repositories) / [LinkedIn](https://www.linkedin.com/in/seokwon-choi-482a41220) (à compléter)
 
 ---
 
