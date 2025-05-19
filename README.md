@@ -1,70 +1,83 @@
-# Getting Started with Create React App
+# 🚆 Horaires Ligne J — Vernon / Paris
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+**Un site ultra-rapide pour consulter les horaires des trains entre Vernouillet–Verneuil, Vernon-Giverny et Paris Saint-Lazare.**
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## ✨ Présentation
 
-### `npm start`
+Cette application web permet de consulter en temps réel les horaires des trains de la **ligne J** du Transilien (SNCF) entre **Vernouillet–Verneuil / Vernon–Giverny** et **Paris Saint-Lazare**.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Pensée pour les habitants de la vallée de la Seine qui font régulièrement le trajet, elle vise à offrir une expérience plus claire, rapide et agréable que les solutions classiques de la SNCF.
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## 🧭 Fonctionnalités principales
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+* **Horaires en temps réel** des trains Vernouillet–Verneuil ⇄ Paris et Vernon–Giverny ⇄ Paris
+* **Affichage instantané du prochain train** vers Paris ou Vernon, idéal pour ne plus rater son train !
+* **Sélecteur Aujourd’hui / Demain** pour anticiper ses déplacements
+* **Plan schématique** de la ligne J
+* **Alertes trafic et perturbations** en direct (travaux, grèves, retards)
+* **Météo locale** à Vernon, Paris et Suwon (bonus)
+* **Design épuré et responsive**, utilisable aussi bien sur mobile que sur ordinateur
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🖼️ Aperçu
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+![screencapture-ligne-j-train-vercel-app-2025-05-19-20_44_18](https://github.com/user-attachments/assets/5497691c-b32c-4797-ac5e-4af9755ffb47)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+---
 
-### `npm run eject`
+## 🚀 Pourquoi utiliser ce site ?
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+* **Simplicité :** pas de pub, pas de compte, pas de navigation inutile
+* **Clarté :** les horaires sont lisibles, et le prochain départ est toujours mis en avant
+* **Rapidité :** chargement instantané, même sur mobile
+* **Adapté aux besoins locaux :** accès rapide à l’info la plus utile, sans fioritures
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 🔗 Lien d’accès
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+> [https://ligne-j-train.vercel.app](https://ligne-j-train.vercel.app)
 
-## Learn More
+---
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 📦 Stack technique
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+* **Frontend**: React, MUI (Material UI), date-fns
+* **Backend/API**: Axios, Node.js (API publique pour les horaires SNCF)
+* **Déploiement**: Vercel
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## ℹ️ Remarques
 
-### Analyzing the Bundle Size
+* **Données horaires** : Les horaires sont donnés à titre indicatif et peuvent être modifiés à tout moment par la SNCF.
+  Pour l’info la plus à jour : [Site officiel SNCF / Transilien](https://www.transilien.com/fr/page-lignes/ligne-j)
+* **Projet personnel non officiel**, sans lien avec la SNCF.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+---
 
-### Making a Progressive Web App
+## 🛠️ À venir
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+* Notifications pour retards ou suppressions
+* Support multilingue (FR/EN/KR)
+* Calcul de tarifs, correspondances
 
-### Advanced Configuration
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## 🙋‍♂️ Auteur
 
-### Deployment
+Développé par SeokWon, utilisateur quotidien de la ligne J, passionné par la tech, le transport, et la simplification du quotidien.
+Contact : [github](#) / [LinkedIn](#) (à compléter)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+---
 
-### `npm run build` fails to minify
+*Si vous avez des suggestions ou souhaitez contribuer, ouvrez une issue ou contactez-moi !*
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---
+
+**Merci et bon voyage sur la ligne J !**
