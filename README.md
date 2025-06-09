@@ -1,3 +1,5 @@
+![logo_256](https://github.com/user-attachments/assets/6b63b60d-c79c-4ced-a82d-6e6f3211b61f)
+
 # 🚆 Horaires Ligne J — Vernon / Paris
 
 **Un site ultra-rapide pour consulter les horaires des trains entre Vernouillet–Verneuil, Vernon-Giverny et Paris Saint-Lazare.**
@@ -72,7 +74,7 @@ Pensée pour les habitants de la vallée de la Seine qui font régulièrement le
 ## 🙋‍♂️ Auteur
 
 Développé par SeokWon, utilisateur quotidien de la ligne J, passionné par la tech, le transport, et la simplification du quotidien.
-Contact : [github](https://github.com/Alfex4936?tab=repositories) / [LinkedIn](https://www.linkedin.com/in/seokwon-choi-482a41220) (à compléter)
+Contact : [github](https://github.com/Alfex4936?tab=repositories) / [LinkedIn](https://www.linkedin.com/in/seokwon-choi-482a41220)
 
 ---
 

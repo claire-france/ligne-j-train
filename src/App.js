@@ -1,4 +1,5 @@
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import DirectionsTransitIcon from '@mui/icons-material/DirectionsTransit';
 import ErrorIcon from '@mui/icons-material/Error';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
@@ -6,6 +7,7 @@ import InfoIcon from '@mui/icons-material/Info';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import NorthIcon from '@mui/icons-material/North';
+import ShareIcon from '@mui/icons-material/Share';
 import SouthIcon from '@mui/icons-material/South';
 import TrainIcon from '@mui/icons-material/Train';
 import WbSunnyIcon from '@mui/icons-material/WbSunny';
@@ -23,7 +25,10 @@ import {
   Chip,
   Container,
   Grid,
+  IconButton,
   Link,
+  Menu,
+  MenuItem,
   Snackbar,
   Tab,
   Table,
@@ -39,8 +44,9 @@ import {
   useTheme
 } from '@mui/material';
 import axios from 'axios';
-import { addDays, compareAsc, format, parseISO } from 'date-fns';
+import { addDays, compareAsc, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import html2canvas from 'html2canvas';
 import { cardio, grid, pinwheel } from 'ldrs';
 import React, { useEffect, useState } from 'react';
 import LoadingAnimation from "./customLoading";
@@ -49,10 +55,8 @@ grid.register();
 pinwheel.register();
 cardio.register();
 
-const version = React.version;
 const formatDate = (date) => format(date, 'PP', { locale: fr });
 const formatTime = (time) => time.slice(0, 5);
-const formatIsoDate = (isoDate) => format(parseISO(isoDate), "PPpp", { locale: fr });
 const formatDuration = (duration) => {
   const parts = duration.split(':');
   const minutes = parseInt(parts[1], 10);
@@ -104,8 +108,12 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
   const currentTime = format(new Date(), 'HH:mm');
   const isEmpty = !schedule || schedule.length === 0;
   const tableRef = React.useRef(null);
+  const cardRef = React.useRef(null); // Reference for the entire card for image capture
   const [showStickyHeader, setShowStickyHeader] = useState(false);
   const [expanded, setExpanded] = useState(false); // New state to track expansion
+  const [shareAnchorEl, setShareAnchorEl] = useState(null);
+  const [showShareSuccess, setShowShareSuccess] = useState(false);
+  const [shareSuccessMessage, setShareSuccessMessage] = useState(''); // Message for success notification
 
   // Track scroll position to show/hide sticky header
   useEffect(() => {
@@ -168,11 +176,283 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
     setExpanded(prev => !prev);
   };
 
+  // Share functionality functions
+  const getScheduleWithTimeWindow = () => {
+    if (isEmpty || !isToday) return schedule; // For empty or tomorrow's schedule, return all
+    
+    const now = new Date();
+    const currentTimeMinutes = now.getHours() * 60 + now.getMinutes();
+    
+    // Calculate time window: -5 to +5 minutes around current time
+    const windowStart = currentTimeMinutes - 5;
+    const windowEnd = currentTimeMinutes + 5;
+    
+    const filteredSchedule = schedule.filter(train => {
+      const [hours, minutes] = formatTime(train.departure).split(':').map(Number);
+      const trainTimeMinutes = hours * 60 + minutes;
+      return trainTimeMinutes >= windowStart && trainTimeMinutes <= windowEnd;
+    });
+    
+    // Handle edge case: if not enough trains in window, expand the range
+    if (filteredSchedule.length < 3) {
+      // Find closest train to current time
+      let closestIndex = -1;
+      let closestDiff = Infinity;
+      
+      schedule.forEach((train, index) => {
+        const [hours, minutes] = formatTime(train.departure).split(':').map(Number);
+        const trainTimeMinutes = hours * 60 + minutes;
+        const diff = Math.abs(trainTimeMinutes - currentTimeMinutes);
+        if (diff < closestDiff) {
+          closestDiff = diff;
+          closestIndex = index;
+        }
+      });
+      
+      if (closestIndex !== -1) {
+        // Return 3 trains centered around the closest one
+        const startIndex = Math.max(0, closestIndex - 1);
+        const endIndex = Math.min(schedule.length, startIndex + 3);
+        return schedule.slice(startIndex, endIndex);
+      }
+    }
+    
+    return filteredSchedule.length > 0 ? filteredSchedule : schedule.slice(0, 3);
+  };
+
+  const generateShareText = (scheduleToShare) => {
+    const dateStr = formatDate(date);
+    const timeWindow = isToday ? " (horaires proches)" : "";
+    
+    let text = `🚆 Horaires Ligne J - ${direction}\n`;
+    text += `📅 ${dateStr}${timeWindow}\n\n`;
+    
+    if (scheduleToShare.length === 0) {
+      text += "❌ Aucun train disponible\n";
+    } else {
+      text += "🕐 Départ | 🕑 Arrivée | ⏱️ Durée\n";
+      text += "─".repeat(30) + "\n";
+      
+      scheduleToShare.forEach(train => {
+        text += `${formatTime(train.departure)} | ${formatTime(train.arrival)} | ${formatDuration(train.duration)}\n`;
+      });
+    }
+    
+    text += `\n📱 Généré depuis Ligne J Train App`;
+    return text;
+  };
+
+  const handleShareClick = (event) => {
+    event.stopPropagation();
+    setShareAnchorEl(event.currentTarget);
+  };
+
+  const handleShareClose = () => {
+    setShareAnchorEl(null);
+  };
+
+  const handleTextShare = async () => {
+    const scheduleToShare = getScheduleWithTimeWindow();
+    const shareText = generateShareText(scheduleToShare);
+    
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setShareSuccessMessage('Horaires copiés dans le presse-papiers !');
+      setShowShareSuccess(true);
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = shareText;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setShareSuccessMessage('Horaires copiés dans le presse-papiers !');
+      setShowShareSuccess(true);
+    }
+    
+    handleShareClose();
+  };
+
+  const handleImageShare = async () => {
+    try {
+      const scheduleToShare = getScheduleWithTimeWindow();
+      
+      // Create a beautiful card element specifically for image generation
+      const imageElement = document.createElement('div');
+      imageElement.style.cssText = `
+        position: fixed;
+        top: -9999px;
+        left: -9999px;
+        width: 600px;
+        box-sizing: border-box;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 16px;
+        padding: 20px;
+        font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+        color: white;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      `;
+      
+      const dateStr = formatDate(date);
+      const timeWindow = isToday ? " (horaires proches)" : "";
+      const currentTimeStr = format(new Date(), 'HH:mm');
+      
+      imageElement.innerHTML = `
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+            <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px; flex-shrink: 0;">
+              🚆
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 700;">Ligne J</h1>
+              <p style="margin: 0; font-size: 12px; opacity: 0.9;">Horaires de train</p>
+            </div>
+          </div>
+          <div style="background: rgba(255,255,255,0.15); border-radius: 10px; padding: 12px; margin-bottom: 16px; box-sizing: border-box; width: 100%; overflow: hidden;">
+            <h2 style="margin: 0 0 6px 0; font-size: 16px; font-weight: 600; word-wrap: break-word; line-height: 1.2;">${direction}</h2>
+            <p style="margin: 0; font-size: 13px; opacity: 0.9;">📅 ${dateStr}${timeWindow}</p>
+            ${isToday ? `<p style="margin: 3px 0 0 0; font-size: 11px; opacity: 0.8;">🕐 Généré à ${currentTimeStr}</p>` : ''}
+          </div>
+        </div>
+        
+        <div style="background: rgba(255,255,255,0.95); border-radius: 10px; overflow: hidden; margin-bottom: 16px; box-sizing: border-box; width: 100%;">
+          ${scheduleToShare.length === 0 ? `
+            <div style="padding: 24px; text-align: center; color: #666;">
+              <div style="font-size: 40px; margin-bottom: 12px;">❌</div>
+              <h3 style="margin: 0 0 6px 0; color: #333; font-size: 16px;">Aucun train disponible</h3>
+              <p style="margin: 0; color: #666; font-size: 12px;">Aucun horaire disponible pour cette période</p>
+            </div>
+          ` : `
+            <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+              <thead>
+                <tr style="background: #f8f9fa;">
+                  <th style="padding: 12px 8px; text-align: center; color: #333; font-weight: 600; font-size: 12px; border-bottom: 2px solid #dee2e6; width: 33.33%;">🕐 Départ</th>
+                  <th style="padding: 12px 8px; text-align: center; color: #333; font-weight: 600; font-size: 12px; border-bottom: 2px solid #dee2e6; width: 33.33%;">🕑 Arrivée</th>
+                  <th style="padding: 12px 8px; text-align: center; color: #333; font-weight: 600; font-size: 12px; border-bottom: 2px solid #dee2e6; width: 33.33%;">⏱️ Durée</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${scheduleToShare.map((train, index) => {
+                  let isNextDeparture = false;
+                  if (isToday) {
+                    const trainTime = new Date(`1970-01-01T${formatTime(train.departure)}`);
+                    const currentTime = new Date(`1970-01-01T${currentTimeStr}`);
+                    isNextDeparture = compareAsc(trainTime, currentTime) >= 0;
+                  }
+                  
+                  return `
+                    <tr style="background: ${index % 2 === 0 ? '#ffffff' : '#f8f9fa'}; ${isNextDeparture ? 'border-left: 3px solid #1976d2;' : ''}">
+                      <td style="padding: 10px 6px; text-align: center; color: ${isNextDeparture ? '#1976d2' : '#333'}; font-weight: ${isNextDeparture ? '700' : '500'}; font-size: 14px; position: relative; width: 33.33%; box-sizing: border-box;">
+                        ${isNextDeparture ? '<div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); background: #1976d2; color: white; font-size: 9px; padding: 1px 6px; border-radius: 3px; font-weight: bold; white-space: nowrap;">PROCHAIN</div>' : ''}
+                        ${formatTime(train.departure)}
+                      </td>
+                      <td style="padding: 10px 6px; text-align: center; color: ${isNextDeparture ? '#1976d2' : '#333'}; font-weight: ${isNextDeparture ? '700' : '500'}; font-size: 14px; width: 33.33%; box-sizing: border-box;">${formatTime(train.arrival)}</td>
+                      <td style="padding: 10px 6px; text-align: center; color: ${isNextDeparture ? '#1976d2' : '#666'}; font-weight: ${isNextDeparture ? '700' : '500'}; font-size: 12px; width: 33.33%; box-sizing: border-box;">${formatDuration(train.duration)}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          `}
+        </div>
+        
+        <div style="text-align: center; opacity: 0.8;">
+          <p style="margin: 0; font-size: 11px;">📱 Généré depuis l'app Ligne J Train</p>
+          <p style="margin: 3px 0 0 0; font-size: 10px;">ligne-j-train.vercel.app</p>
+        </div>
+      `;
+      
+      document.body.appendChild(imageElement);
+      
+      // Generate the image using html2canvas
+      const canvas = await html2canvas(imageElement, {
+        backgroundColor: null,
+        scale: 2, // Higher quality
+        width: 600,
+        height: imageElement.scrollHeight,
+        useCORS: true,
+        allowTaint: true,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: 600,
+        windowHeight: imageElement.scrollHeight
+      });
+      
+      // Clean up the temporary element
+      document.body.removeChild(imageElement);
+      
+      // Convert canvas to blob and share/download
+      canvas.toBlob(async (blob) => {
+        // Try to copy to clipboard first
+        try {
+          if (navigator.clipboard && navigator.clipboard.write) {
+            const clipboardItem = new ClipboardItem({
+              'image/png': blob
+            });
+            await navigator.clipboard.write([clipboardItem]);
+            setShareSuccessMessage('Image copiée dans le presse-papiers !');
+            setShowShareSuccess(true);
+          }
+        } catch (clipboardError) {
+          console.log('Clipboard copy failed, trying share or download:', clipboardError);
+        }
+
+        // Then try native share API if available
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'horaires-ligne-j.png', { type: 'image/png' })] })) {
+          try {
+            await navigator.share({
+              title: `Horaires Ligne J - ${direction}`,
+              text: `Horaires de train ${direction} pour ${dateStr}`,
+              files: [new File([blob], `horaires-ligne-j-${dateStr}.png`, { type: 'image/png' })]
+            });
+            // Only show share success if clipboard copy didn't already succeed
+            if (!showShareSuccess) {
+              setShareSuccessMessage('Image partagée avec succès !');
+              setShowShareSuccess(true);
+            }
+          } catch (err) {
+            if (err.name !== 'AbortError') {
+              // Fallback to download if both clipboard and share fail
+              downloadImage(blob);
+            }
+          }
+        } else {
+          // If no clipboard success and no share API, fallback to download
+          if (!showShareSuccess) {
+            downloadImage(blob);
+          }
+        }
+      }, 'image/png', 0.95);
+      
+    } catch (error) {
+      console.error('Error generating image:', error);
+      // Fallback to text sharing if image generation fails
+      await handleTextShare();
+    }
+    
+    handleShareClose();
+  };
+
+  const downloadImage = (blob) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `horaires-ligne-j-${direction.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${format(date, 'yyyy-MM-dd')}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setShareSuccessMessage('Image téléchargée avec succès !');
+    setShowShareSuccess(true);
+  };
+
   const visibleRows = getVisibleRows();
   const hasMoreRows = !isEmpty && !expanded && schedule.length > visibleRows.length;
 
   return (
-    <Card sx={{ 
+    <Card ref={cardRef} sx={{ 
       mb: 4, 
       borderRadius: 2,
       boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
@@ -201,6 +481,23 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
           </Typography>
         }
         subheader={formatDate(date)}
+        action={
+          !isEmpty && (
+            <IconButton
+              aria-label="share"
+              onClick={handleShareClick}
+              sx={{ 
+                color: 'text.secondary',
+                '&:hover': {
+                  color: 'primary.main',
+                  backgroundColor: 'rgba(25, 118, 210, 0.08)'
+                }
+              }}
+            >
+              <ShareIcon />
+            </IconButton>
+          )
+        }
         sx={{
           pb: 1,
           backgroundColor: 'rgba(0,0,0,0.02)',
@@ -486,6 +783,71 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
               </Button>
             </Box>
           )}
+
+          {/* Share menu */}
+          <Menu
+            anchorEl={shareAnchorEl}
+            open={Boolean(shareAnchorEl)}
+            onClose={handleShareClose}
+            PaperProps={{
+              elevation: 8,
+              sx: { 
+                borderRadius: 2,
+                mt: 1,
+                minWidth: 180,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+              },
+            }}
+          >
+            <MenuItem 
+              onClick={handleTextShare} 
+              sx={{ 
+                py: 1.5,
+                '&:hover': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                },
+              }}
+            >
+              <ContentCopyIcon sx={{ mr: 1, fontSize: 20 }} />
+              Copier le texte
+            </MenuItem>
+            <MenuItem 
+              onClick={handleImageShare} 
+              sx={{ 
+                py: 1.5,
+                '&:hover': {
+                  backgroundColor: 'rgba(25, 118, 210, 0.1)',
+                },
+              }}
+            >
+              <ShareIcon sx={{ mr: 1, fontSize: 20 }} />
+              Partager l'image
+            </MenuItem>
+          </Menu>
+
+          {/* Success message after sharing */}
+          <Snackbar
+            open={showShareSuccess}
+            autoHideDuration={3000}
+            onClose={() => setShowShareSuccess(false)}
+            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          >
+            <Alert 
+              onClose={() => setShowShareSuccess(false)} 
+              severity="success" 
+              elevation={6}
+              variant="filled"
+              sx={{ 
+                width: '100%', 
+                maxWidth: 500,
+                '& .MuiAlert-icon': { 
+                  alignItems: 'center' 
+                }
+              }}
+            >
+              {shareSuccessMessage || 'Partage réussi !'}
+            </Alert>
+          </Snackbar>
         </CardContent>
       )}
     </Card>
