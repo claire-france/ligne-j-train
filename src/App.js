@@ -66,7 +66,7 @@ const DisruptionSnackbar = ({ disruption, onClose }) => {
   return (
     <Snackbar
       open={true}
-      autoHideDuration={15000}
+      autoHideDuration={10000}
       onClose={onClose}
       anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
     >
@@ -1258,7 +1258,7 @@ const WeatherDisplay = () => {
           Conditions météorologiques actuelles à Vernon, Paris et Suwon
         </Typography>
       </Box>
-      <Grid container spacing={3}>
+      <Grid container spacing={3} justifyContent="center">
         <Grid item xs={12} md={4}>
           <WeatherInfo area="Vernon" weatherData={vernonWeather} />
         </Grid>
@@ -1286,6 +1286,7 @@ const App = () => {
   const [nextDepartures, setNextDepartures] = useState({ paris: '', vernon: '' });
   const [disruption, setDisruption] = useState(null);
   const [tabValue, setTabValue] = useState(0);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const currentTime = format(new Date(), 'HH:mm');
@@ -1336,10 +1337,30 @@ const App = () => {
           axios.get('https://lignej-vv-ps.fly.dev/train-schedule/paris-to-vernon'),
         ]);
 
+        // Check for API disruptions first
         if (vernonParisResponse.data.disruptions && vernonParisResponse.data.disruptions.length > 0) {
           setDisruption(vernonParisResponse.data.disruptions);
-        } else {
+          setShowSuccessMessage(false);
+        } 
+        // Check if both today's schedules are empty (no trains available)
+        else if (vernonParisResponse.data.today.journeys.length === 0 && parisVernonResponse.data.today.journeys.length === 0) {
+          // Create custom disruption message for empty schedule
+          const emptyScheduleDisruption = [{
+            id: 'empty-schedule-today',
+            cause: 'Absence de circulation',
+            severity: {
+              effect: 'Aucun train disponible aujourd\'hui sur la Ligne J'
+            },
+            messages: [{
+              text: 'Il semble qu\'aucun train ne soit programmé aujourd\'hui entre Vernon-Giverny et Paris Saint-Lazare. Cela peut être dû à des travaux, jours fériés, ou perturbations exceptionnelles. Nous vous recommandons de consulter le site officiel SNCF pour plus d\'informations.'
+            }]
+          }];
+          setDisruption(emptyScheduleDisruption);
+          setShowSuccessMessage(false);
+        } 
+        else {
           setDisruption(null);
+          setShowSuccessMessage(true);
         }
 
         setScheduleData((prevData) => ({
@@ -1504,28 +1525,39 @@ const App = () => {
               onClose={() => handleCloseDisruption(index)}
             />
           ))
-        ) : (
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            bgcolor: '#e8f5e9', 
-            p: 1.5, 
-            mb: 3, 
-            borderRadius: 2,
-            border: '1px solid #c8e6c9'
-          }}>
-            <InfoIcon color="success" sx={{ mr: 2 }} />
-            <Typography variant="body1" color="success.dark" sx={{ fontWeight: 500 }}>
-              Trafic normal sur l'ensemble de la Ligne J
-            </Typography>
-          </Box>
+        ) : null}
+
+        {showSuccessMessage && (
+          <Snackbar
+            open={true}
+            autoHideDuration={3000}
+            onClose={() => setShowSuccessMessage(false)}
+            anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          >
+            <Alert 
+              onClose={() => setShowSuccessMessage(false)} 
+              severity="success" 
+              elevation={6}
+              variant="filled"
+              icon={<InfoIcon />}
+              sx={{ 
+                width: '100%', 
+                maxWidth: 500,
+                '& .MuiAlert-icon': { 
+                  alignItems: 'center' 
+                }
+              }}
+            >
+              <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                Trafic normal sur l'ensemble de la Ligne J
+              </Typography>
+            </Alert>
+          </Snackbar>
         )}
 
         <WeatherDisplay />
 
         <Box sx={{ py: 2 }}>
-          
-
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
             <Tabs 
               value={tabValue} 
