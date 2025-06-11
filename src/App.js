@@ -10,7 +10,6 @@ import NorthIcon from '@mui/icons-material/North';
 import ShareIcon from '@mui/icons-material/Share';
 import SouthIcon from '@mui/icons-material/South';
 import TrainIcon from '@mui/icons-material/Train';
-import WbSunnyIcon from '@mui/icons-material/WbSunny';
 import {
   Alert,
   AppBar,
@@ -67,7 +66,7 @@ const DisruptionSnackbar = ({ disruption, onClose }) => {
   return (
     <Snackbar
       open={true}
-      autoHideDuration={12000}
+      autoHideDuration={15000}
       onClose={onClose}
       anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
     >
@@ -857,82 +856,174 @@ const ScheduleCard = ({ direction, date, schedule, isToday = false, icon }) => {
 const WeatherInfo = ({ area, weatherData, isSuwon = false }) => {
   if (!weatherData) return null;
 
-  let iconComponent;
-  if (area === "Vernon") {
-    iconComponent = <WbSunnyIcon sx={{ color: "#FFB300" }} />;
-  } else if (area === "Paris") {
-    iconComponent = <WbSunnyIcon sx={{ color: "#1976d2" }} />;
-  } else {
-    iconComponent = <WbSunnyIcon sx={{ color: "#9c27b0" }} />;
-  }
+  const getWeatherIcon = (area, weatherData) => {
+    // For Suwon, we use the provided iconImage, so we'll return a default emoji as fallback
+    if (area === "Suwon") {
+      return "☀️"; // This is just a fallback; the actual iconImage is used in the UI
+    }
+    
+    // For French locations, map weather conditions to appropriate emojis
+    const condition = weatherData?.weather_condition?.toLowerCase() || '';
+    
+    // Weather condition mapping for French weather data
+    if (condition.includes('soleil') || condition.includes('ensoleillé')) return "☀️";
+    if (condition.includes('éclaircies') || condition.includes('eclaircies')) return "🌤️";
+    if (condition.includes('nuageux') || condition.includes('nuages')) return "☁️";
+    if (condition.includes('couvert')) return "☁️";
+    if (condition.includes('brouillard')) return "🌫️";
+    if (condition.includes('pluie') || condition.includes('pluvieux')) {
+      if (condition.includes('faible')) return "🌦️";
+      if (condition.includes('forte') || condition.includes('intense')) return "🌧️";
+      return "🌧️";
+    }
+    if (condition.includes('orage')) return "⛈️";
+    if (condition.includes('neige')) return "🌨️";
+    if (condition.includes('grêle') || condition.includes('grele')) return "🌨️";
+    if (condition.includes('vent')) return "💨";
+    
+    // Temperature-based fallbacks if no specific condition matches
+    if (weatherData?.temperature_do) {
+      const temp = parseFloat(weatherData.temperature_do);
+      if (temp >= 25) return "☀️";
+      if (temp >= 15) return "🌤️";
+      if (temp >= 5) return "☁️";
+      return "🌨️";
+    }
+    
+    // Default fallbacks by area if nothing else matches
+    if (area === "Vernon") return "🌤️";
+    if (area === "Paris") return "🌦️";
+    return "☀️";
+  };
+
+  const getGradientColors = (area) => {
+    if (area === "Vernon") return "linear-gradient(135deg, #FFB300 0%, #FF8F00 100%)";
+    if (area === "Paris") return "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)";
+    return "linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%)"; // Suwon
+  };
 
   // If it's Suwon, data structure differs
   if (isSuwon) {
     return (
       <Card sx={{ 
         height: '100%', 
-        display: 'flex', 
-        flexDirection: 'column',
-        borderRadius: 2,
-        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-        transition: 'transform 0.2s ease',
+        borderRadius: 3,
+        background: getGradientColors(area),
+        color: 'white',
+        boxShadow: '0 8px 24px rgba(156, 39, 176, 0.3)',
+        transition: 'all 0.3s ease',
+        position: 'relative',
+        overflow: 'hidden',
         '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: '0 6px 16px rgba(0,0,0,0.12)',
+          transform: 'translateY(-8px)',
+          boxShadow: '0 12px 32px rgba(156, 39, 176, 0.4)',
+        },
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(255,255,255,0.1)',
+          borderRadius: 3,
         }
       }}>
-        <CardHeader
-          avatar={
-            <Avatar sx={{ bgcolor: '#9c27b0' }}>
-              {iconComponent}
-            </Avatar>
-          }
-          title={
-            <Typography variant="h6" component="h3" sx={{ fontWeight: 600 }}>
-              {area}
-            </Typography>
-          }
-          subheader={
-            <Link href="https://www.k-pullup.com/pullup/7263" target="_blank" sx={{ color: 'text.secondary' }}>
-              Détails
-            </Link>
-          }
-          sx={{
-            pb: 1,
-            backgroundColor: 'rgba(0,0,0,0.02)',
-            borderBottom: '1px solid rgba(0,0,0,0.08)',
-          }}
-        />
-        <CardContent sx={{ px: 2, py: 1, flexGrow: 1 }}>
-          <Grid container spacing={1}>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">Température</Typography>
-              <Typography variant="body1" sx={{ fontWeight: 500 }}>{weatherData.temperature}°C</Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">Conditions</Typography>
-              <Typography variant="body1" sx={{ fontWeight: 500 }}>{weatherData.desc}</Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">Humidité</Typography>
-              <Typography variant="body1" sx={{ fontWeight: 500 }}>{weatherData.humidity}%</Typography>
-            </Grid>
-            <Grid item xs={6}>
-              <Typography variant="body2" color="text.secondary">Pluie</Typography>
-              <Typography variant="body1" sx={{ fontWeight: 500 }}>{weatherData.rainfall} mm/h</Typography>
-            </Grid>
-            {weatherData.snowfall && weatherData.snowfall.trim() !== '' && (
-              <Grid item xs={6}>
-                <Typography variant="body2" color="text.secondary">Neige</Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>{weatherData.snowfall} mm/h</Typography>
-              </Grid>
-            )}
-          </Grid>
-          {weatherData.iconImage && (
-            <Box sx={{ textAlign: 'center', mt: 1 }}>
-              <img src={weatherData.iconImage} alt="Météo Suwon" style={{ height: 40 }} />
+        <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
+          {/* Header with location and icon */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+                {area}
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                Corée du Sud
+              </Typography>
             </Box>
-          )}
+            {weatherData.iconImage ? (
+              <Box sx={{ 
+                width: 60, 
+                height: 60, 
+                borderRadius: '50%', 
+                background: 'rgba(255,255,255,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backdropFilter: 'blur(10px)'
+              }}>
+                <img 
+                  src={weatherData.iconImage} 
+                  alt="Météo Suwon" 
+                  style={{ width: 40, height: 40 }} 
+                />
+              </Box>
+            ) : (
+              <Typography sx={{ fontSize: '3rem' }}>
+                {getWeatherIcon(area, weatherData)}
+              </Typography>
+            )}
+          </Box>
+
+          {/* Main temperature display */}
+          <Box sx={{ textAlign: 'center', mb: 3 }}>
+            <Typography variant="h2" sx={{ fontWeight: 300, lineHeight: 1 }}>
+              {Math.round(parseFloat(weatherData.temperature))}°
+            </Typography>
+            <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 500 }}>
+              {weatherData.desc}
+            </Typography>
+          </Box>
+
+          {/* Weather details in a compact grid */}
+          <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(2, 1fr)', 
+            gap: 2,
+            '& > div': {
+              background: 'rgba(255,255,255,0.15)',
+              borderRadius: 2,
+              p: 1.5,
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.2)'
+            }
+          }}>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>💧 Humidité</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>{weatherData.humidity}%</Typography>
+            </Box>
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>🌧️ Pluie</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>{weatherData.rainfall} mm</Typography>
+            </Box>
+            {weatherData.snowfall && weatherData.snowfall.trim() !== '' && (
+              <>
+                <Box sx={{ textAlign: 'center', gridColumn: 'span 2' }}>
+                  <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>❄️ Neige</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>{weatherData.snowfall} mm</Typography>
+                </Box>
+              </>
+            )}
+          </Box>
+
+          {/* Source link */}
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Link 
+              href="https://www.k-pullup.com/pullup/7263" 
+              target="_blank" 
+              sx={{ 
+                color: 'white', 
+                opacity: 0.8,
+                textDecoration: 'none',
+                fontSize: '0.875rem',
+                '&:hover': {
+                  opacity: 1,
+                  textDecoration: 'underline'
+                }
+              }}
+            >
+              📍 Voir plus de détails
+            </Link>
+          </Box>
         </CardContent>
       </Card>
     );
@@ -942,72 +1033,131 @@ const WeatherInfo = ({ area, weatherData, isSuwon = false }) => {
   return (
     <Card sx={{ 
       height: '100%', 
-      display: 'flex', 
-      flexDirection: 'column',
-      borderRadius: 2,
-      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-      transition: 'transform 0.2s ease',
+      borderRadius: 3,
+      background: getGradientColors(area),
+      color: 'white',
+      boxShadow: area === "Vernon" ? '0 8px 24px rgba(255, 179, 0, 0.3)' : '0 8px 24px rgba(25, 118, 210, 0.3)',
+      transition: 'all 0.3s ease',
+      position: 'relative',
+      overflow: 'hidden',
       '&:hover': {
-        transform: 'translateY(-4px)',
-        boxShadow: '0 6px 16px rgba(0,0,0,0.12)',
+        transform: 'translateY(-8px)',
+        boxShadow: area === "Vernon" ? '0 12px 32px rgba(255, 179, 0, 0.4)' : '0 12px 32px rgba(25, 118, 210, 0.4)',
+      },
+      '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(255,255,255,0.1)',
+        borderRadius: 3,
       }
     }}>
-      <CardHeader
-        avatar={
-          <Avatar sx={{ bgcolor: area === "Vernon" ? '#FFB300' : '#1976d2' }}>
-            {iconComponent}
-          </Avatar>
-        }
-        title={
-          <Typography variant="h6" component="h3" sx={{ fontWeight: 600 }}>
-            {area}
+      <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
+        {/* Header with location and icon */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+              {area}
+            </Typography>
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+              France
+            </Typography>
+          </Box>
+          <Typography sx={{ fontSize: '3rem' }}>
+            {getWeatherIcon(area, weatherData)}
           </Typography>
-        }
-        subheader={
-          <Link href="https://meteofrance.com/" target="_blank" sx={{ color: 'text.secondary' }}>
-            Météo France
-          </Link>
-        }
-        sx={{
-          pb: 1,
-          backgroundColor: 'rgba(0,0,0,0.02)',
-          borderBottom: '1px solid rgba(0,0,0,0.08)',
-        }}
-      />
-      <CardContent sx={{ px: 2, py: 1, flexGrow: 1 }}>
-        <Grid container spacing={1}>
-          <Grid item xs={6}>
-            <Typography variant="body2" color="text.secondary">Température</Typography>
-            <Typography variant="body1" sx={{ fontWeight: 500 }}>{weatherData.temperature_do}°C</Typography>
-          </Grid>
-          <Grid item xs={6}>
-            <Typography variant="body2" color="text.secondary">Ressenti</Typography>
-            <Typography variant="body1" sx={{ fontWeight: 500 }}>{weatherData.wind_chill_do}°C</Typography>
-          </Grid>
-          <Grid item xs={6}>
-            <Typography variant="body2" color="text.secondary">Humidité</Typography>
-            <Typography variant="body1" sx={{ fontWeight: 500 }}>{weatherData.humidity_percentage}%</Typography>
-          </Grid>
-          <Grid item xs={6}>
-            <Typography variant="body2" color="text.secondary">Vent</Typography>
-            <Typography variant="body1" sx={{ fontWeight: 500 }}>{weatherData.wind_speed_ms} m/s</Typography>
-          </Grid>
-          <Grid item xs={12}>
-            <Typography variant="body2" color="text.secondary">Conditions</Typography>
-            <Typography variant="body1" sx={{ fontWeight: 500 }}>{weatherData.weather_condition}</Typography>
-          </Grid>
-          {weatherData.next_hour_rain_date && (
-            <Grid item xs={12}>
-              <Typography variant="body2" color="text.secondary">Pluie prévue</Typography>
-              <Typography variant="body1" sx={{ fontWeight: 500 }}>{weatherData.next_hour_rain_date}</Typography>
-            </Grid>
+        </Box>
+
+        {/* Main temperature display */}
+        <Box sx={{ textAlign: 'center', mb: 3 }}>
+          <Typography variant="h2" sx={{ fontWeight: 300, lineHeight: 1 }}>
+            {Math.round(weatherData.temperature_do)}°
+          </Typography>
+          <Typography variant="h6" sx={{ opacity: 0.9, fontWeight: 500 }}>
+            {weatherData.weather_condition}
+          </Typography>
+          <Typography variant="body2" sx={{ opacity: 0.8 }}>
+            Ressenti {Math.round(weatherData.wind_chill_do)}°
+          </Typography>
+        </Box>
+
+        {/* Weather details in a compact grid */}
+        <Box sx={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(2, 1fr)', 
+          gap: 2,
+          mb: 2,
+          '& > div': {
+            background: 'rgba(255,255,255,0.15)',
+            borderRadius: 2,
+            p: 1.5,
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.2)'
+          }
+        }}>
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>💧 Humidité</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>{weatherData.humidity_percentage}%</Typography>
+          </Box>
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>💨 Vent</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>{weatherData.wind_speed_ms} m/s</Typography>
+          </Box>
+          {weatherData.rain_last_hour_mm > 0 && (
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>🌧️ Pluie (1h)</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>{weatherData.rain_last_hour_mm} mm</Typography>
+            </Box>
           )}
-        </Grid>
-      </CardContent>
-      <CardContent sx={{ pt: 0 }}>
-        <Typography variant="caption" color="text.secondary">
-          Mis à jour: {weatherData.updated_at}
-        </Typography>
+          {weatherData.snow_last_hour_mm > 0 && (
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>❄️ Neige (1h)</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>{weatherData.snow_last_hour_mm} mm</Typography>
+            </Box>
+          )}
+        </Box>
+
+        {/* Next rain prediction */}
+        {weatherData.next_hour_rain_date && (
+          <Box sx={{ 
+            background: 'rgba(255,255,255,0.15)',
+            borderRadius: 2,
+            p: 1.5,
+            mb: 2,
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            textAlign: 'center'
+          }}>
+            <Typography variant="body2" sx={{ opacity: 0.8, mb: 0.5 }}>🌦️ Pluie prévue</Typography>
+            <Typography variant="body1" sx={{ fontWeight: 600 }}>{weatherData.next_hour_rain_date}</Typography>
+          </Box>
+        )}
+
+        {/* Update time and source */}
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="caption" sx={{ opacity: 0.7, display: 'block', mb: 0.5 }}>
+            Mis à jour: {weatherData.updated_at}
+          </Typography>
+          <Link 
+            href="https://meteofrance.com/" 
+            target="_blank" 
+            sx={{ 
+              color: 'white', 
+              opacity: 0.8,
+              textDecoration: 'none',
+              fontSize: '0.875rem',
+              '&:hover': {
+                opacity: 1,
+                textDecoration: 'underline'
+              }
+            }}
+          >
+            📍 Météo France
+          </Link>
+        </Box>
       </CardContent>
     </Card>
   );
@@ -1064,16 +1214,22 @@ const WeatherDisplay = () => {
       {franceImg && (
         <Card sx={{ 
           mb: 3, 
-          borderRadius: 2,
+          borderRadius: 3,
           overflow: 'hidden',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.15)'
+          boxShadow: '0 8px 24px rgba(0,0,0,0.1)'
         }}>
           <CardHeader
-            title="Satellite France"
+            title={
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, mr: 1 }}>
+                  🛰️ Satellite France
+                </Typography>
+              </Box>
+            }
             sx={{
               backgroundColor: 'rgba(0,0,0,0.02)',
               borderBottom: '1px solid rgba(0,0,0,0.08)',
-              py: 1
+              py: 1.5
             }}
           />
           <CardMedia
@@ -1087,9 +1243,21 @@ const WeatherDisplay = () => {
           />
         </Card>
       )}
-      <Typography variant="h5" component="h2" gutterBottom sx={{ fontWeight: 600, mb: 2, pl: 1 }}>
-        Météo actuelle
-      </Typography>
+      <Box sx={{ mb: 3, textAlign: 'center' }}>
+        <Typography variant="h4" component="h2" sx={{ 
+          fontWeight: 700, 
+          mb: 1,
+          background: 'linear-gradient(45deg, #1976d2, #9c27b0)',
+          backgroundClip: 'text',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+        }}>
+          🌤️ Météo en temps réel
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Conditions météorologiques actuelles à Vernon, Paris et Suwon
+        </Typography>
+      </Box>
       <Grid container spacing={3}>
         <Grid item xs={12} md={4}>
           <WeatherInfo area="Vernon" weatherData={vernonWeather} />
@@ -1356,72 +1524,7 @@ const App = () => {
         <WeatherDisplay />
 
         <Box sx={{ py: 2 }}>
-          <Typography variant="h5" component="h2" sx={{ fontWeight: 600, mb: 1, pl: 1 }}>
-            Ligne J - Paris Saint-Lazare ↔ Vernon-Giverny
-          </Typography>
-          <Typography variant="body2" sx={{ mb: 3, pl: 1, color: 'text.secondary' }}>
-            Horaires des trains entre Paris Saint-Lazare et Vernon-Giverny (Vernouillet - Verneuil)
-          </Typography>
-
-          {/* Ligne J Map Section */}
-          <Card sx={{ 
-            mb: 4, 
-            borderRadius: 2,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-            overflow: 'hidden'
-          }}>
-            <CardHeader
-              avatar={<DirectionsTransitIcon color="primary" />}
-              title="Plan de la Ligne J"
-              titleTypographyProps={{ variant: 'h6', fontWeight: 600 }}
-              sx={{
-                backgroundColor: 'rgba(0,0,0,0.02)',
-                borderBottom: '1px solid rgba(0,0,0,0.08)',
-                py: 1.5
-              }}
-            />
-            <CardMedia
-              component="img"
-              image="https://www.transilien.com/sites/transilien/files/2024-09/Ligne_J_plan_schema_0924.png?itok=hB71PBN4"
-              alt="Ligne J Map"
-              sx={{ 
-                width: '100%',
-                maxWidth: '100%',
-                height: isMobile ? 200 : 300,
-                objectFit: 'cover',
-                overflowX: 'auto',
-                borderBottom: '1px solid rgba(0,0,0,0.1)'
-              }}
-            />
-            <CardContent sx={{ py: 2 }}>
-              <Typography variant="body2">
-                Plan schématique de la Ligne J du Transilien reliant Paris Saint-Lazare à Vernon-Giverny 
-                et autres destinations. Cliquez pour agrandir.
-              </Typography>
-            </CardContent>
-            <CardActions sx={{ px: 2, pb: 2 }}>
-              <Button
-                variant="contained"
-                color="primary"
-                size="small"
-                href="https://www.transilien.com/sites/transilien/files/2024-09/Ligne_J_plan_schema_0924.png?itok=hB71PBN4"
-                target="_blank"
-                disableElevation
-              >
-                Voir en grand
-              </Button>
-              <Button
-                variant="outlined"
-                color="primary"
-                size="small"
-                href="https://www.transilien.com/fr/page-lignes/ligne-j#content-section-1160-part-2-tab"
-                target="_blank"
-                sx={{ ml: 1 }}
-              >
-                Site officiel
-              </Button>
-            </CardActions>
-          </Card>
+          
 
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
             <Tabs 
@@ -1493,6 +1596,73 @@ const App = () => {
               </Grid>
             )}
           </Box>
+
+          <Typography variant="h5" component="h2" sx={{ fontWeight: 600, mb: 1, pl: 1 }}>
+            Ligne J - Paris Saint-Lazare ↔ Vernon-Giverny
+          </Typography>
+          <Typography variant="body2" sx={{ mb: 3, pl: 1, color: 'text.secondary' }}>
+            Horaires des trains entre Paris Saint-Lazare et Vernon-Giverny (Vernouillet - Verneuil)
+          </Typography>
+
+          {/* Ligne J Map Section */}
+          <Card sx={{ 
+            mb: 4, 
+            borderRadius: 2,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+            overflow: 'hidden'
+          }}>
+            <CardHeader
+              avatar={<DirectionsTransitIcon color="primary" />}
+              title="Plan de la Ligne J"
+              titleTypographyProps={{ variant: 'h6', fontWeight: 600 }}
+              sx={{
+                backgroundColor: 'rgba(0,0,0,0.02)',
+                borderBottom: '1px solid rgba(0,0,0,0.08)',
+                py: 1.5
+              }}
+            />
+            <CardMedia
+              component="img"
+              image="https://www.transilien.com/sites/transilien/files/2024-09/Ligne_J_plan_schema_0924.png?itok=hB71PBN4"
+              alt="Ligne J Map"
+              sx={{ 
+                width: '100%',
+                maxWidth: '100%',
+                height: isMobile ? 200 : 300,
+                objectFit: 'cover',
+                overflowX: 'auto',
+                borderBottom: '1px solid rgba(0,0,0,0.1)'
+              }}
+            />
+            <CardContent sx={{ py: 2 }}>
+              <Typography variant="body2">
+                Plan schématique de la Ligne J du Transilien reliant Paris Saint-Lazare à Vernon-Giverny 
+                et autres destinations. Cliquez pour agrandir.
+              </Typography>
+            </CardContent>
+            <CardActions sx={{ px: 2, pb: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                size="small"
+                href="https://www.transilien.com/sites/transilien/files/2024-09/Ligne_J_plan_schema_0924.png?itok=hB71PBN4"
+                target="_blank"
+                disableElevation
+              >
+                Voir en grand
+              </Button>
+              <Button
+                variant="outlined"
+                color="primary"
+                size="small"
+                href="https://www.transilien.com/fr/page-lignes/ligne-j#content-section-1160-part-2-tab"
+                target="_blank"
+                sx={{ ml: 1 }}
+              >
+                Site officiel
+              </Button>
+            </CardActions>
+          </Card>
         </Box>
       </Container>
 
